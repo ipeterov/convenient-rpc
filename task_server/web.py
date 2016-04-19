@@ -16,8 +16,10 @@ def submit_task():
 
     return jsonify(sucsess=True, id=id_)
 
-@app.route("/user/request_answer/<id_>", methods=['GET'])
-def request_answer(id_):
+@app.route("/user/request_answer", methods=['GET'])
+def request_answer():
+    id_ = request.args['id']
+
     try:
         return jsonify(sucsess=True, answer=manager.get_answer(id_))
     except NotReadyException:

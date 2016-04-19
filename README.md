@@ -62,14 +62,14 @@ API looks like that:
             Comment:
                 You must specify the `function` argument, others are optional.
         
-        request_answer/<id> GET
+        request_answer GET
+            Query args:
+                id - the one you get from "/submit_task"
             Returns:
                 {
                     "sucsess": <bool>,
                     "answer": <answer that some worker made>
                 }
-            Comment:
-                `id` is the one you get from the output of "/submit_task"
 
         estimate_time_left GET
             Returns:
