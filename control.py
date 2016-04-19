@@ -23,6 +23,10 @@ def request_answer(id_):
     except NotReadyException:
         return jsonify(sucsess=False, reason='Task with this ID is not ready yet')
 
+@app.route("/user/estimate_time_left", methods=['POST'])
+def estimate_time_left():
+    return jsonify(sucsess=True, time=manager.estimate_time_left())
+
 @app.route("/worker/request_task", methods=['GET'])
 def request_task():
     id_, task = manager.get_task()

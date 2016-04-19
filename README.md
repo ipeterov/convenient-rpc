@@ -34,6 +34,13 @@ API looks like that:
                 }
             Comment:
                 "id" is the one you get from the output of "/submit_task"
+
+        estimate_time_left GET
+            Returns:
+                {
+                    "sucsess": <bool>,
+                    "time": <float, time in seconds that is needed to finish current task_queue with one (average) processing core>
+                }
     
     /worker/
         These are methods that only workers should use. Will require authentification soon. 
