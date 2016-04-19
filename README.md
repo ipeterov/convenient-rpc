@@ -15,7 +15,7 @@ It's under development now, but in future you will be able to use it like that:
     
     argskwargslist = [
         [
-            (42, 1), 
+            [42, 1], 
             {
                 "bar": True,
                 "spam": False
@@ -23,7 +23,7 @@ It's under development now, but in future you will be able to use it like that:
         ],
     
         [
-            (13, 2), 
+            [13, 2], 
             {
                 "bar": False,
                 "spam": True
@@ -48,7 +48,7 @@ API looks like that:
                 {
                     "package": "my_package",
                     "function": "foo",
-                    "args": (42, 1),
+                    "args": [42, 1],
                     "kwargs": {
                         "bar": true,
                         "spam": false
