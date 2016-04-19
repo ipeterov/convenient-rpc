@@ -54,7 +54,7 @@ class TaskManager:
             return sum(times) / len(times)
 
     def estimate_time_left(self):
-        tasks = Counter(self.hash_task(task) for task in self.unsent_tasks).items()
+        tasks = Counter(self.hash_task(self.tasks[id_]) for id_ in self.unsent_tasks).items()
         return sum(self.estimate_runtime(hash_key) * count for hash_key, count in tasks)
 
 
