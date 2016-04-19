@@ -1,10 +1,12 @@
 # convenient-rpc
 
-It's a project that allows to call functions on many remote machines (workers). Basically, you specify args, function, module name (and package, if needed), it installs it and imports modules on all the workers, passes args to the function and gives you your result. 
+It's a project that allows to call functions on many remote machines (workers). Basically, you specify args, function, module name (and package, if needed), it installs it and imports modules on all the workers, passes args to the function and gives you your result.
 
-It's under development now, but in future you will be able to use it like that:
+You'll have to install wrapper as a python module, launch `task_server` at one machine and launch `task_process` at all the workers. Sounds complicated, but I will supply Docker images for it, so deploying such a thing on AWS (or any other hoster that supports Docker) will be pretty simple.
 
-    from convenientrpc import API
+Then you will be able to use it like this:
+
+    from wrapper import API
 
     api = API('mytaskserver.somedomain')
     
@@ -34,89 +36,4 @@ It's under development now, but in future you will be able to use it like that:
     for result in api.map(function_description, argskwargslist):
         print(result)
 
-## task-server
-
-This is the part that manages the nodes and exposes a convinient REST API to manage tasks. It also collects basic function runtime stats and tries to predict how much processing time you need.
-
-API looks like that:
-
-    /user/
-        Public API that will be exposed to users. Will require authentification soon (if you don't want everybody to use your workers).
-    
-        submit_task POST JSON
-            Example input:
-                {
-                    "package": "my_package",
-                    "function": "foo",
-                    "args": [42, 1],
-                    "kwargs": {
-                        "bar": true,
-                        "spam": false
-                    }
-                }
-            Returns:
-                {
-                    "sucsess": <bool>,
-                    "id": <id of the new task>
-                }
-            Comment:
-                You must specify the `function` argument, others are optional.
-        
-        request_answer GET
-            Query args:
-                id - the one you get from "/submit_task"
-            Returns:
-                {
-                    "sucsess": <bool>,
-                    "answer": <answer that some worker made>
-                }
-
-        estimate_time_left GET
-            Returns:
-                {
-                    "sucsess": <bool>,
-                    "time": <float>
-                }
-            Comment:
-                `time` is in seconds that are needed to finish current task queue with one (average) processing core
-    
-    /worker/
-        These are methods that only workers should use. Will require authentification soon. 
-    
-        request_task GET
-            Returns:
-                {
-                    "sucsess": <bool>,
-                    "id": <some id>,
-                    "task": <>
-                }
-    
-        submit_answer POST
-            Example input:
-                {
-                    "id": <id of the computed task>,
-                    "answer": <stuff you want to return>
-                }
-            Returns:
-                {
-                    "sucsess": <bool>,
-                }
-
-## task-processor
-
-This is the part that should be run on all the workers.
-
-To be able to use custom packages (which is the point of this project), you can specify your custom PyPi repo in the [.pypirc] file and workers will automatically use it.
-
-It should be run from a virtualenv with dependencies from `requirements.txt` installed.
-
-You can just launch it with `env_path/python3 node.py` or import it (to specify control server and stuff like that)  and run like this:
-
-    from node import TaskProcessor, process_task
-
-    processor = TaskProcessor()
-    processor.mainloop()
-
-You can also redefine `process_task` to do custom stuff with your tasks. Your variant should accept a tuple like this one: `(id_, function, args, kwargs)` and return a tuple like this: `(id_, result)`.
-
-[.pypirc]: https://docs.python.org/2/distutils/packageindex.html#pypirc
+Note that this is an early alpha version, so stuff may brake / change quicky.
