@@ -6,7 +6,7 @@ It's under development now, but in future you will be able to use it like that:
 
     from convenientrpc import API
 
-    api = API('mytaskserver.com')
+    api = API('mytaskserver.somedomain')
     
     function_description = {
         "package": "my_package",
@@ -31,7 +31,7 @@ It's under development now, but in future you will be able to use it like that:
         ],
     ]
 
-    for result in api.imap(function_description, argskwargslist):
+    for result in api.map(function_description, argskwargslist):
         print(result)
 
 ## task-server
