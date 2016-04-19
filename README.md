@@ -3,7 +3,7 @@
 It's a project that allows to call functions on many remote machines (workers). Basically, you specify args, function, module name (and package, if needed), it installs it and imports modules on all the workers, passes args to the function and gives you your result. 
 
 
-# task-server
+## task-server
 
 This is the part that manages the nodes and exposes a convinient REST API to manage tasks. It also collects basic function runtime stats and tries to predict how much processing time you need.
 
@@ -29,7 +29,7 @@ API looks like that:
                     "id": <id of the new task>
                 }
             Comment:
-                You must specify the "function" argument, others are optional.
+                You must specify the `function` argument, others are optional.
         
         request_answer/<id> GET
             Returns:
@@ -38,14 +38,16 @@ API looks like that:
                     "answer": <answer that some worker made>
                 }
             Comment:
-                "id" is the one you get from the output of "/submit_task"
+                `id` is the one you get from the output of "/submit_task"
 
         estimate_time_left GET
             Returns:
                 {
                     "sucsess": <bool>,
-                    "time": <float, time in seconds that is needed to finish current task_queue with one (average) processing core>
+                    "time": <float>
                 }
+            Comment:
+                `time` is in seconds that are needed to finish current task queue with one (average) processing core
     
     /worker/
         These are methods that only workers should use. Will require authentification soon. 
@@ -69,7 +71,7 @@ API looks like that:
                     "sucsess": <bool>,
                 }
 
-# task-processor
+## task-processor
 
 This is the part that should be run on all the workers.
 
