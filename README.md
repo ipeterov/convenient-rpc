@@ -8,7 +8,7 @@ It's under development now, but in future you will be able to use it like that:
 
     api = API('mytaskserver.com')
     
-    function = {
+    function_description = {
         "package": "my_package",
         "function": "foo"
     }
@@ -31,7 +31,7 @@ It's under development now, but in future you will be able to use it like that:
         ],
     ]
 
-    for result in api.imap_unordered(task, argskwargslist):
+    for result in api.imap(function_description, argskwargslist):
         print(result)
 
 ## task-server
