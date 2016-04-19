@@ -63,25 +63,3 @@ class NotReadyException(Exception):
 
 class WrongIDException(Exception):
     pass
-
-
-if __name__ == '__main__':
-    import random
-
-    task = {
-        'package': 1,
-        'version': 2,
-        'function': 3,
-    }
-
-    manager = TaskManager()
-
-    for _ in range(10):
-        manager.add_task(task)
-
-    for _ in range(10):
-        id_, answer = manager.get_task()
-        manager.add_answer(id_, 1, time=random.uniform(8, 12))
-
-    print(manager.estimate_runtime(task))
-    
