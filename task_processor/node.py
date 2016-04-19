@@ -15,7 +15,7 @@ def process_task(task_tuple):
 
 class TaskProcessor:
 
-    def __init__(self, server_addr='http://control.us-west-2.elasticbeanstalk.com'):
+    def __init__(self, server_addr):
         
         # This will throw an exception if run not from virtualenv
         self.env = VirtualEnvironment()
