@@ -1,4 +1,5 @@
 import requests
+import time
 
 
 class API:
@@ -25,7 +26,7 @@ class API:
         response = requests.get(self.server_addr, params=params).json()
         return response['sucsess'], response.get('answer', None)
 
-    def imap_byid(self, function_description, argskwargslist):
+    def map_unordered(self, function_description, argskwargslist):
         ids = set()
         for task in (make_task(function_description, argskwargs) for argskwargs in argskwargslist):
             ids.add(self.send_task(task))
@@ -35,4 +36,18 @@ class API:
                 sucsess, answer = self.get_answer(id_)
                 if sucsess:
                     ids.remove(id_)
-                    yield id_, answer
+                    yield answer
+
+    def map(self, function_description, argskwargslist, check_interval=0.1):
+        ids = set()
+        for task in (make_task(function_description, argskwargs) for argskwargs in argskwargslist):
+            ids.add(self.send_task(task))
+
+        for id_ in ids:
+            while True:
+                sucsess, answer = self.get_answer(id_)
+                if sucsess:
+                    yield answer
+                    break
+                else:
+                    time.sleep(check_interval)
