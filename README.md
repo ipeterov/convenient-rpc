@@ -2,6 +2,37 @@
 
 It's a project that allows to call functions on many remote machines (workers). Basically, you specify args, function, module name (and package, if needed), it installs it and imports modules on all the workers, passes args to the function and gives you your result. 
 
+It's under development now, but in future you will be able to use it like that:
+
+    from convenientrpc import API
+
+    api = API('mytaskserver.com')
+    
+    function = {
+        "package": "my_package",
+        "function": "foo"
+    }
+    
+    argskwargslist = [
+        [
+            (42, 1), 
+            {
+                "bar": True,
+                "spam": False
+            }
+        ],
+    
+        [
+            (13, 2), 
+            {
+                "bar": False,
+                "spam": True
+            }
+        ],
+    ]
+
+    for result in api.imap_unordered(task, argskwargslist):
+        print(result)
 
 ## task-server
 
