@@ -12,7 +12,7 @@ Then you will be able to use it like this:
     
     function_description = {
         "package_version": "1.3", # This is optional
-        "package": "my_package", # This is optional. too
+        "package": "my_package", # This is optional, too
         "function": "foo"
     }
     
@@ -38,6 +38,6 @@ Then you will be able to use it like this:
         # Do stuff with the structure our function returned
         print(result)
 
-Note that it accepts not functions themselfves, but function descriptions (which are mapping objects with special keys) and returns only json-serializable results. In the future, it will probably use `marshal` module and will be able to operate exactly like `map` function (accept function objects and return any objects).
+Note that it accepts not functions themselfves, but function descriptions (which are just mapping objects with special keys) and returns only json-serializable results. In the future, it will probably use `marshal` module and will be able to operate exactly like `map` function (accept function objects and return any objects).
 
 That this is an early alpha version, so stuff may brake / change quicky!
