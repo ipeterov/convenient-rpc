@@ -11,7 +11,9 @@ manager = TaskManager()
 
 @app.route("/user/submit_task", methods=['POST'])
 def submit_task():
-    task = request.json()
+    print(request.data)
+    task = request.get_json()
+
     id_ = manager.add_task(task)
 
     return jsonify(sucsess=True, id=id_)
@@ -31,12 +33,15 @@ def estimate_time_left():
 
 @app.route("/worker/request_task", methods=['GET'])
 def request_task():
-    id_, task = manager.get_task()
-    return jsonify(sucsess=True, id=id_, task=task)
+    try:
+        id_, task = manager.get_task()
+        return jsonify(sucsess=True, id=id_, task=task)
+    except NotReadyException:
+        return jsonify(sucsess=False)
 
 @app.route("/worker/submit_answer", methods=['POST'])
 def submit_answer():
-    r = request.json()
+    r = request.get_json()
 
     id_ = r['id']
     answer = r['answer']

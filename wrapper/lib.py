@@ -1,8 +1,14 @@
-import requests
 import time
+
+import requests
+from requests.compat import urljoin
 
 
 class API:
+
+    send_task_endpoint = 'user/submit_task'
+    get_answer_endpoint = 'user/request_answer'
+
     @staticmethod
     def make_task(function_description, argskwargs):
         task = function_description.copy()
@@ -14,7 +20,7 @@ class API:
         self.server_addr = server_addr
 
     def send_task(self, task):
-        response = requests.post(self.server_addr, data=task).json()
+        response = requests.post(urljoin(self.server_addr, self.send_task_endpoint), json=task).json()
 
         if response['sucsess']:
             return response['id']
@@ -23,12 +29,12 @@ class API:
 
     def get_answer(self, id_):
         params = {'id': id_}
-        response = requests.get(self.server_addr, params=params).json()
+        response = requests.get(urljoin(self.server_addr, self.get_answer_endpoint), params=params).json()
         return response['sucsess'], response.get('answer', None)
 
-    def map_unordered(self, function_description, argskwargslist):
+    def map_unordered(self, function_description, argskwargslist, check_interval=1):
         ids = set()
-        for task in (make_task(function_description, argskwargs) for argskwargs in argskwargslist):
+        for task in (self.make_task(function_description, argskwargs) for argskwargs in argskwargslist):
             ids.add(self.send_task(task))
 
         while ids:
@@ -37,10 +43,12 @@ class API:
                 if sucsess:
                     ids.remove(id_)
                     yield answer
+                else:
+                    time.sleep(check_interval)
 
-    def map(self, function_description, argskwargslist, check_interval=0.1):
+    def map(self, function_description, argskwargslist, check_interval=1):
         ids = set()
-        for task in (make_task(function_description, argskwargs) for argskwargs in argskwargslist):
+        for task in (self.make_task(function_description, argskwargs) for argskwargs in argskwargslist):
             ids.add(self.send_task(task))
 
         for id_ in ids:

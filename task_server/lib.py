@@ -5,7 +5,7 @@ class TaskManager:
 
     @staticmethod
     def hash_task(task):
-        return hash(''.join(str(task[key]) for key in ('package', 'version', 'function')))
+        return hash(''.join(str(task.get(key, '')) for key in ('package', 'version', 'function')))
 
     def __init__(self):
         self.tasks = {}
@@ -29,7 +29,11 @@ class TaskManager:
             raise NotReadyException()
 
     def get_task(self):
-        id_ = self.unsent_tasks.pop(0)
+        try:
+            id_ = self.unsent_tasks.pop(0)
+        except IndexError:
+            raise NotReadyException()
+
         task = self.tasks[id_]
 
         return id_, task

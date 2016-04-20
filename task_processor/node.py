@@ -1,8 +1,10 @@
 import builtins
 import multiprocessing
 import importlib
+import time
 
 import requests
+from requests.compat import urljoin
 from virtualenvapi.manage import VirtualEnvironment
 
 def process_task(task_tuple):
@@ -15,6 +17,9 @@ def process_task(task_tuple):
 
 class TaskProcessor:
 
+    send_result_endpoint = 'worker/submit_answer'
+    get_task_endpoint = 'worker/request_task'
+
     def __init__(self, server_addr):
         
         # This will throw an exception if run not from virtualenv
@@ -25,7 +30,7 @@ class TaskProcessor:
 
     def send_result(self, id_, answer):
         data = {'id': id_, 'answer': answer}
-        r = requests.post(self.server_addr + '/submit_answer', data=data).json()
+        r = requests.post(urljoin(self.server_addr, self.send_result_endpoint), json=data).json()
         if r['sucsess'] == False:
             raise Exception('Server did not accept the result')
 
@@ -43,21 +48,26 @@ class TaskProcessor:
         else:
             return getattr(builtins, function)
 
-    def task_generator(self):
+    def task_generator(self, check_interval=1):
         while True:
             try:
-                r = requests.get(self.server_addr + '/request_task').json()
+                r = requests.get(urljoin(self.server_addr, self.get_task_endpoint)).json()
             except:
+                time.sleep(check_interval)
                 continue
-            task = r['task']
+            
             if r['sucsess'] == True:
+                task = r['task']
                 function = self.get_function(task['function'], task.get('package', None), task.get('version', None))
                 yield r['id'], function, task['args'], task['kwargs']
+            else:
+                time.sleep(check_interval)
+                continue
 
     def mainloop(self):
         for id_, answer in self.pool.imap_unordered(process_task, self.task_generator()):
             self.send_result(id_, answer)
 
 if __name__ == '__main__':
-    processor = TaskProcessor()
+    processor = TaskProcessor('http://localhost:5000/')
     processor.mainloop()
