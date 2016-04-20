@@ -11,6 +11,7 @@ Then you will be able to use it like this:
     api = API('mytaskserver.somedomain')
     
     function_description = {
+        "package_version": "1.3", # This is optional
         "package": "my_package",
         "function": "foo"
     }
@@ -34,6 +35,7 @@ Then you will be able to use it like this:
     ]
 
     for result in api.map(function_description, argskwargslist):
+        # Do stuff with the structure our function returned
         print(result)
 
 Note that this is an early alpha version, so stuff may brake / change quicky.
