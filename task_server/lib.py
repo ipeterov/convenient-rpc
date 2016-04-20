@@ -56,6 +56,8 @@ class TaskManager:
         if hash_key in self.task_performance:
             times = self.task_performance[hash_key]
             return sum(times) / len(times)
+        else:
+            return 0
 
     def estimate_time_left(self):
         tasks = Counter(self.hash_task(self.tasks[id_]) for id_ in self.unsent_tasks).items()

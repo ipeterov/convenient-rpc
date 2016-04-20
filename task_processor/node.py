@@ -13,7 +13,12 @@ def process_task(task_tuple):
         args = []
     if kwargs == None:
         kwargs = {}
-    return id_, function(*args, **kwargs)
+
+    t = time.time()
+    ret = function(*args, **kwargs)
+    t = time.time() - t
+
+    return id_, ret, t
 
 class TaskProcessor:
 
@@ -28,8 +33,10 @@ class TaskProcessor:
         self.server_addr = server_addr
         self.pool = multiprocessing.Pool()
 
-    def send_result(self, id_, answer):
+    def send_result(self, id_, answer, time=None):
         data = {'id': id_, 'answer': answer}
+        if not time == None:
+            data['time'] = time
         r = requests.post(urljoin(self.server_addr, self.send_result_endpoint), json=data).json()
         if r['sucsess'] == False:
             raise Exception('Server did not accept the result')
@@ -65,8 +72,8 @@ class TaskProcessor:
                 continue
 
     def mainloop(self):
-        for id_, answer in self.pool.imap_unordered(process_task, self.task_generator()):
-            self.send_result(id_, answer)
+        for id_, answer, time in self.pool.imap_unordered(process_task, self.task_generator()):
+            self.send_result(id_, answer, time)
 
 if __name__ == '__main__':
     processor = TaskProcessor('http://localhost:5000/')

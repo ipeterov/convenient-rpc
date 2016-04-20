@@ -8,6 +8,7 @@ class API:
 
     send_task_endpoint = 'user/submit_task'
     get_answer_endpoint = 'user/request_answer'
+    estimate_time_left_endpoint = 'user/estimate_time_left'
 
     @staticmethod
     def make_task(function_description, argskwargs):
@@ -31,6 +32,11 @@ class API:
         params = {'id': id_}
         response = requests.get(urljoin(self.server_addr, self.get_answer_endpoint), params=params).json()
         return response['sucsess'], response.get('answer', None)
+
+    def estimate_time_left(self):
+        response = requests.get(urljoin(self.server_addr, self.estimate_time_left_endpoint))
+        response = response.json()
+        return response['time']
 
     def map_unordered(self, function_description, argskwargslist, check_interval=1):
         ids = set()

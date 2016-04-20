@@ -11,7 +11,6 @@ manager = TaskManager()
 
 @app.route("/user/submit_task", methods=['POST'])
 def submit_task():
-    print(request.data)
     task = request.get_json()
 
     id_ = manager.add_task(task)
@@ -45,9 +44,10 @@ def submit_answer():
 
     id_ = r['id']
     answer = r['answer']
+    time = r.get('time', None)
 
     try:
-        manager.add_answer(id_, answer)
+        manager.add_answer(id_, answer, time)
         return jsonify(sucsess=True)
     except WrongIDException:
         return jsonify(sucsess=False, reason='There was no task with this ID')
