@@ -20,7 +20,8 @@ def submit_task():
 @app.route("/user/request_answer", methods=['GET'])
 def request_answer():
     id_ = request.args['id']
-    answer = manager.get_answer(id_)
+    blocking = request.args.get('blocking', True)
+    answer = manager.get_answer(id_, blocking=blocking)
     return jsonify(sucsess=True, answer=answer)
 
 @app.route("/user/estimate_time_left", methods=['GET'])

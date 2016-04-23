@@ -25,10 +25,16 @@ class TaskManager:
 
         return id_
 
-    def get_answer(self, id_):
-        while id_ not in self.answers:
-            pass    
-        return self.answers.pop(id_)
+    def get_answer(self, id_, blocking=True):
+        if blocking:
+            while id_ not in self.answers:
+                pass    
+            return self.answers.pop(id_)
+        else:
+            if id_ in answers:
+                return self.answers.pop(id_)
+            else:
+                raise NotReadyException()
 
     def get_task(self):
         while True:
@@ -43,13 +49,14 @@ class TaskManager:
         return id_, task
 
     def add_answer(self, id_, answer, time=None):
-        task = self.tasks[id_]
-        hash_key = self.hash_task(task)
 
         if id_ in self.tasks:
+            task = self.tasks[id_]
             del self.tasks[id_]
         else:
             raise WrongIDException()
+
+        hash_key = self.hash_task(task)
 
         self.answers[id_] = answer
 

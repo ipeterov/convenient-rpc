@@ -29,8 +29,8 @@ class API:
         else:
             raise RuntimeError('Server returned sucsess != True')
 
-    def get_answer(self, id_):
-        params = {'id': id_}
+    def get_answer(self, id_, blocking=True):
+        params = {'id': id_, 'blocking': blocking}
         response = requests.get(urljoin(self.server_addr, self.get_answer_endpoint), params=params).json()
         return response['sucsess'], response.get('answer', None)
 
