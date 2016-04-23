@@ -30,6 +30,10 @@ def request_answer():
 def estimate_time_left():
     return jsonify(sucsess=True, time=manager.estimate_time_left())
 
+@app.route("/admin/show_tasks", methods=['GET'])
+def show_tasks():
+    return jsonify(manager.get_tasks())
+
 @app.route("/worker/request_task", methods=['GET'])
 def request_task():
     try:

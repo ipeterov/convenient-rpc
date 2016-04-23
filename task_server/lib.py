@@ -15,6 +15,9 @@ class TaskManager:
 
         self.task_performance = {}
 
+    def get_tasks(self):
+        return self.tasks
+
     def add_task(self, task):
         id_ = str(uuid.uuid4())
         self.tasks[id_] = task
