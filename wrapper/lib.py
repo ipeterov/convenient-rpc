@@ -11,13 +11,14 @@ class API:
     estimate_time_left_endpoint = 'user/estimate_time_left'
 
     @staticmethod
-    def make_task(function_description, argskwargs):
+    def make_task(function_description, args=[], kwargs={}):
         task = function_description.copy()
-        task['args'] = argskwargs.get('args', [])
-        task['kwargs'] = argskwargs.get('kwargs', {})
+        task['args'] = args
+        task['kwargs'] = kwargs
         return task
 
-    def __init__(self, server_addr):
+    def __init__(self, server_addr, check_interval=1):
+        self.check_interval = check_interval
         self.server_addr = server_addr
 
     def send_task(self, task):
@@ -38,9 +39,9 @@ class API:
         response = response.json()
         return response['time']
 
-    def map_unordered(self, function_description, argskwargslist, check_interval=1):
+    def map_unordered(self, function_description, items):
         ids = set()
-        for task in (self.make_task(function_description, argskwargs) for argskwargs in argskwargslist):
+        for task in (self.make_task(function_description, args=[item]) for item in items):
             ids.add(self.send_task(task))
 
         while ids:
@@ -50,12 +51,12 @@ class API:
                     ids.remove(id_)
                     yield answer
                 else:
-                    time.sleep(check_interval)
+                    time.sleep(self.check_interval)
 
-    def map(self, function_description, argskwargslist, check_interval=1):
-        ids = set()
-        for task in (self.make_task(function_description, argskwargs) for argskwargs in argskwargslist):
-            ids.add(self.send_task(task))
+    def map(self, function_description, items):
+        ids = []
+        for task in (self.make_task(function_description, args=[item]) for item in items):
+            ids.append(self.send_task(task))
 
         for id_ in ids:
             while True:
@@ -64,4 +65,15 @@ class API:
                     yield answer
                     break
                 else:
-                    time.sleep(check_interval)
+                    time.sleep(self.check_interval)
+
+    def apply(self, function_description, args=[], kwargs={}):
+        task = self.make_task(function_description, args=args, kwargs=kwargs)
+        id_ = self.send_task(task)
+
+        while True:
+            sucsess, answer = self.get_answer(id_)
+            if sucsess:
+                return answer
+            else:
+                time.sleep(self.check_interval)
