@@ -20,11 +20,8 @@ def submit_task():
 @app.route("/user/request_answer", methods=['GET'])
 def request_answer():
     id_ = request.args['id']
-
-    try:
-        return jsonify(sucsess=True, answer=manager.get_answer(id_))
-    except NotReadyException:
-        return jsonify(sucsess=False, reason='Task with this ID is not ready yet')
+    answer = manager.get_answer(id_)
+    return jsonify(sucsess=True, answer=answer)
 
 @app.route("/user/estimate_time_left", methods=['GET'])
 def estimate_time_left():
@@ -36,11 +33,8 @@ def show_tasks():
 
 @app.route("/worker/request_task", methods=['GET'])
 def request_task():
-    try:
-        id_, task = manager.get_task()
-        return jsonify(sucsess=True, id=id_, task=task)
-    except NotReadyException:
-        return jsonify(sucsess=False)
+    id_, task = manager.get_task()
+    return jsonify(sucsess=True, id=id_, task=task)
 
 @app.route("/worker/submit_answer", methods=['POST'])
 def submit_answer():

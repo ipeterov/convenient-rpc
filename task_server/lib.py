@@ -26,16 +26,17 @@ class TaskManager:
         return id_
 
     def get_answer(self, id_):
-        if id_ in self.answers:
-            return self.answers.pop(id_)
-        else:
-            raise NotReadyException()
+        while id_ not in self.answers:
+            pass    
+        return self.answers.pop(id_)
 
     def get_task(self):
-        try:
-            id_ = self.unsent_tasks.pop(0)
-        except IndexError:
-            raise NotReadyException()
+        while True:
+            try:
+                id_ = self.unsent_tasks.pop(0)
+                break
+            except IndexError:
+                pass
 
         task = self.tasks[id_]
 
