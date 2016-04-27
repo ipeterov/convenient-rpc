@@ -1,4 +1,5 @@
 import uuid
+import time
 from collections import Counter
 
 class TaskManager:
@@ -8,6 +9,8 @@ class TaskManager:
         return hash(''.join(str(task.get(key, '')) for key in ('package', 'version', 'function')))
 
     def __init__(self):
+        self.wait_interval = 0.01
+
         self.tasks = {}
         self.answers = {}
 
@@ -25,16 +28,20 @@ class TaskManager:
 
         return id_
 
-    def get_answer(self, id_, blocking=True):
-        if blocking:
-            while id_ not in self.answers:
-                pass    
-            return self.answers.pop(id_)
+    def get_answers(self, ids, unordered=False):
+        if unordered:
+            while ids:
+                for id_ in ids.copy():
+                    if id_ in self.answers:
+                        ids.remove(id_)
+                        yield self.answers.pop(id_)
+                time.sleep(self.wait_interval) 
         else:
-            if id_ in answers:
-                return self.answers.pop(id_)
-            else:
-                raise NotReadyException()
+            for id_ in ids:
+                while id_ not in self.answers:
+                    time.sleep(self.wait_interval)
+                yield self.answers.pop(id_)
+
 
     def get_task(self):
         while True:
@@ -42,7 +49,7 @@ class TaskManager:
                 id_ = self.unsent_tasks.pop(0)
                 break
             except IndexError:
-                pass
+                time.sleep(self.wait_interval)
 
         task = self.tasks[id_]
 

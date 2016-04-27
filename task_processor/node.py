@@ -2,6 +2,7 @@ import builtins
 import multiprocessing
 import importlib
 import time
+import argparse
 
 import requests
 from requests.compat import urljoin
@@ -38,8 +39,8 @@ class TaskProcessor:
         if not time == None:
             data['time'] = time
         r = requests.post(urljoin(self.server_addr, self.send_result_endpoint), json=data).json()
-        if r['sucsess'] == False:
-            raise Exception('Server did not accept the result')
+        # if r['sucsess'] == False:
+            # raise Exception('Server did not accept the result')
 
     def get_function(self, function, package_name=None, version=None):
         if package_name:
@@ -66,7 +67,7 @@ class TaskProcessor:
             if r['sucsess'] == True:
                 task = r['task']
                 function = self.get_function(task['function'], task.get('package', None), task.get('version', None))
-                yield r['id'], function, task['args'], task['kwargs']
+                yield r['id'], function, task.get('args', []), task.get('kwargs', {})
             else:
                 time.sleep(check_interval)
                 continue
@@ -76,5 +77,9 @@ class TaskProcessor:
             self.send_result(id_, answer, time)
 
 if __name__ == '__main__':
-    processor = TaskProcessor('http://localhost:5000/')
+    parser = argparse.ArgumentParser(description='A convenient-rpc node.')
+    parser.add_argument('server_address')
+    args = parser.parse_args()
+
+    processor = TaskProcessor(args.server_address)
     processor.mainloop()
