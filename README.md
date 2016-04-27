@@ -12,36 +12,22 @@ Then you will be able to use it like this:
     
     # All the options except for "function" are optional.
     # "module" is the thing that you import, 
-    # "package" and "pacakge_version" are the
-    # things you pass to pip.
-    function_description = {
-        "package_version": "1.3",
-        "package": "my_package",
-        "module": "foo_module",
-        "function": "foo"
-    }
-    
-    argskwargslist = [
-        [
-            [42, 1], 
-            {
-                "bar": True,
-                "spam": False
-            }
-        ],
-    
-        [
-            [13, 2], 
-            {
-                "bar": False,
-                "spam": True
-            }
-        ],
-    ]
+    # "package" and "package_version" are the things you pass to pip.
 
-    for result in api.map(function_description, argskwargslist):
+    funcdesc = {
+        # Let's use some package from PyPi
+        'package': 'entropy',
+        'module': 'entropy',
+        'function': 'shannon_entropy'
+    }
+
+    for result in api.map(funcdesc, ('spam', 'W2u)l1', '00000')):
         # Do stuff with the structure our function returned
         print(result)
+
+    > 0.25  
+    > 0.32312031562255994
+    > 0.0
 
 Note that it accepts not functions themselves, but function descriptions (which are just mapping objects with special keys) and returns only json-serializable results. In the future, it will probably use `marshal` module and will be able to operate exactly like `map` function (accept function objects and return any objects).
 
