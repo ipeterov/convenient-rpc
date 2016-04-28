@@ -22,7 +22,7 @@ Use it like that:
     > 2
     > 4
 
-It can also operate with function descriptions (just dictionaries describing how to get the function), if you need to use a module from PyPi, or from python stdlib:
+It can also operate with function descriptions (just dictionaries describing how to import the function), if you need to just use a module from PyPi, or from python stdlib:
 
     # All the options except for "function" are optional.
     # "module" is the thing that you import, 
