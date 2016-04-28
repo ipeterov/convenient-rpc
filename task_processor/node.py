@@ -3,17 +3,49 @@ import multiprocessing
 import importlib
 import time
 import argparse
+import pickle
+from base64 import b64decode
 
 import requests
 from requests.compat import urljoin
 from virtualenvapi.manage import VirtualEnvironment
 
-def process_task(task_tuple):
-    id_, function, args, kwargs = task_tuple
-    if args == None:
-        args = []
-    if kwargs == None:
-        kwargs = {}
+# This will throw an exception if run not from virtualenv
+env = VirtualEnvironment()
+
+
+def get_function(task):
+
+    mode = task.get('mode', 'funcdesc')
+
+    if mode == 'funcdesc':
+        funcdesc = task['function']
+
+        name = funcdesc['name']
+        package_name = funcdesc.get('package', None)
+        version = funcdesc.get('version', None)
+        
+        if package_name:
+            try: 
+                package = importlib.import_module(package_name)
+            except ImportError:
+                if not version:
+                    env.install(package_name)
+                else:
+                    env.install((package_name, version))
+                package = importlib.import_module(package_name)
+            return getattr(package, name)
+        else:
+            return getattr(builtins, name)
+
+    elif mode == 'pickle':
+        return pickle.loads(b64decode(task['function'].encode('utf-8')))
+
+def process_task(r):
+    id_ = r['id']
+    task = r['task']
+    function = get_function(task)
+    args, kwargs = task.get('args', []), task.get('kwargs', {})
 
     t = time.time()
     ret = function(*args, **kwargs)
@@ -27,10 +59,6 @@ class TaskProcessor:
     get_task_endpoint = 'worker/request_task'
 
     def __init__(self, server_addr):
-        
-        # This will throw an exception if run not from virtualenv
-        self.env = VirtualEnvironment()
-
         self.server_addr = server_addr
         self.pool = multiprocessing.Pool()
 
@@ -42,20 +70,6 @@ class TaskProcessor:
         # if r['sucsess'] == False:
             # raise Exception('Server did not accept the result')
 
-    def get_function(self, function, package_name=None, version=None):
-        if package_name:
-            try: 
-                package = importlib.import_module(package_name)
-            except ImportError:
-                if not version:
-                    self.env.install(package_name)
-                else:
-                    self.env.install((package_name, version))
-                package = importlib.import_module(package_name)
-            return getattr(package, function)
-        else:
-            return getattr(builtins, function)
-
     def task_generator(self, check_interval=1):
         while True:
             try:
@@ -65,9 +79,7 @@ class TaskProcessor:
                 continue
             
             if r['sucsess'] == True:
-                task = r['task']
-                function = self.get_function(task['function'], task.get('package', None), task.get('version', None))
-                yield r['id'], function, task.get('args', []), task.get('kwargs', {})
+                yield r
             else:
                 time.sleep(check_interval)
                 continue

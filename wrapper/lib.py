@@ -1,5 +1,7 @@
-import time
+from base64 import b64encode
 
+
+import cloudpickle
 import requests
 from requests.compat import urljoin
 
@@ -12,8 +14,18 @@ class API:
     estimate_time_left_endpoint = 'user/estimate_time_left'
 
     @staticmethod
-    def make_tasks(function_description, argskwargslist=[]):
-        tasks = function_description.copy()
+    def make_tasks(function, argskwargslist=[]):
+        if callable(function):
+            tasks = {
+                'function': b64encode(cloudpickle.dumps(function)).decode('utf-8'),
+                'mode': 'pickle'
+            }
+        elif isinstance(function, dict):
+            tasks = {
+                'function': function.copy(),
+                'mode': 'funcdesc'
+            }
+
         tasks['argskwargslist'] = argskwargslist
         return tasks
 
@@ -21,9 +33,6 @@ class API:
         self.check_interval = check_interval
         self.stream_chunksize = stream_chunksize
         self.server_addr = server_addr
-
-    def get_url(self, endpoint):
-        return urljoin(self.server_addr, endpoint)
 
     def post(self, endpoint, **kwargs):
         r = requests.post(urljoin(self.server_addr, endpoint), json=kwargs).json()
@@ -65,12 +74,12 @@ class API:
         r = self.get(self.estimate_time_left_endpoint)
         return r['time']
 
-    def map(self, function_description, items, unordered=False):
-        tasks = self.make_tasks(function_description, [{'args': [item]} for item in items])
+    def map(self, function, items, unordered=False):
+        tasks = self.make_tasks(function, [{'args': [item]} for item in items])
         ids = self.send_tasks(tasks)
         return self.get_answers(ids, unordered=unordered)
     
-    def apply(self, function_description, *args, **kwargs):
-        tasks = self.make_tasks(function_description, argskwargslist=[{'args': args, 'kwargs': kwargs}])
+    def apply(self, function, *args, **kwargs):
+        tasks = self.make_tasks(function, argskwargslist=[{'args': args, 'kwargs': kwargs}])
         ids = self.send_tasks(tasks)
         return list(self.get_answers(ids, stream=False))[0]
