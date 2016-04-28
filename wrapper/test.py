@@ -6,16 +6,16 @@ api = API('http://localhost:5000/')
 # "module" is the thing that you import, 
 # "package" and "package_version" are the things you pass to pip.
 
-# funcdesc = {'name': 'hash'}
-funcdesc = {
-    # Let's use some package from PyPi
-    'package': 'entropy',
-    'module': 'entropy',
-    'name': 'shannon_entropy'
-}
+funcdesc = {'name': 'hash'}
+# funcdesc = {
+#     # Let's use some package from PyPi
+#     'package': 'entropy',
+#     'module': 'entropy',
+#     'name': 'shannon_entropy'
+# }
 
-# items = ('qwe{}'.format(n) for n in range(100))
-items = ('spam', 'W2u)l1', '00000')
+items = ('qwe{}'.format(n) for n in range(10000))
+# items = ('spam', 'W2u)l1', '00000')
 
 def double(n):
 	return n*2
@@ -23,3 +23,5 @@ def double(n):
 for result in api.map(double, items):
     # Do stuff with the structure our function returned
     print(result)
+
+# api.apply(funcdesc, 1, 2)

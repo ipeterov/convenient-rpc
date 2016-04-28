@@ -42,16 +42,23 @@ def get_function(task):
         return pickle.loads(b64decode(task['function'].encode('utf-8')))
 
 def process_task(r):
-    id_ = r['id']
     task = r['task']
+    result = {
+        'id': r['id']
+    }
     function = get_function(task)
     args, kwargs = task.get('args', []), task.get('kwargs', {})
 
-    t = time.time()
-    ret = function(*args, **kwargs)
-    t = time.time() - t
+    try:
+        t = time.time()
+        result['answer'] =  function(*args, **kwargs)
+        result['time'] = time.time() - t
+        result['sucsess'] = True
+    except Exception as e:
+        result['exception'] = str(e)
+        result['sucsess'] = False
 
-    return id_, ret, t
+    return result
 
 class TaskProcessor:
 
@@ -62,18 +69,27 @@ class TaskProcessor:
         self.server_addr = server_addr
         self.pool = multiprocessing.Pool()
 
-    def send_result(self, id_, answer, time=None):
-        data = {'id': id_, 'answer': answer}
-        if not time == None:
-            data['time'] = time
-        r = requests.post(urljoin(self.server_addr, self.send_result_endpoint), json=data).json()
-        # if r['sucsess'] == False:
-            # raise Exception('Server did not accept the result')
+    def post(self, endpoint, **kwargs):
+        r = requests.post(urljoin(self.server_addr, endpoint), json=kwargs).json()
+        if r['sucsess']:
+            return r
+        else:
+            raise RuntimeError('Server returned sucsess != True')
+
+    def get(self, endpoint):
+        r = requests.get(urljoin(self.server_addr, endpoint)).json()
+        if r['sucsess']:
+            return r
+        else:
+            raise RuntimeError('Server returned sucsess != True')
+
+    def send_result(self, **kwargs):
+        r = self.post(self.send_result_endpoint, **kwargs)
 
     def task_generator(self, check_interval=1):
         while True:
             try:
-                r = requests.get(urljoin(self.server_addr, self.get_task_endpoint)).json()
+                r = self.get(self.get_task_endpoint)
             except:
                 time.sleep(check_interval)
                 continue
@@ -85,8 +101,8 @@ class TaskProcessor:
                 continue
 
     def mainloop(self):
-        for id_, answer, time in self.pool.imap_unordered(process_task, self.task_generator()):
-            self.send_result(id_, answer, time)
+        for result in self.pool.imap_unordered(process_task, self.task_generator()):
+            self.send_result(**result)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='A convenient-rpc node.')

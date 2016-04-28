@@ -43,7 +43,6 @@ def request_answers():
     unordered = r.get('unordered', False)
     ids = r.get('ids', [])
 
-
     answer_gen = manager.get_answers(ids, unordered=unordered)
 
     if start_stream:
@@ -105,15 +104,19 @@ def submit_answer():
 
     r = request.get_json()
 
-    id_ = r['id']
-    answer = r['answer']
-    time = r.get('time', None)
+    if r['sucsess']:
+        id_ = r['id']
+        answer = r['answer']
+        time = r.get('time', None)
 
-    try:
-        manager.add_answer(id_, answer, time)
+        try:
+            manager.add_answer(id_, answer, time)
+            return jsonify(sucsess=True)
+        except WrongIDException:
+            return jsonify(sucsess=False, reason='There was no task with this ID')
+    else:
+        print('Task with id={} failed with: "{}".'.format(r['id'], r['exception']))
         return jsonify(sucsess=True)
-    except WrongIDException:
-        return jsonify(sucsess=False, reason='There was no task with this ID')
 
 
 if __name__ == "__main__":
