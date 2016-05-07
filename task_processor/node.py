@@ -7,11 +7,10 @@ import pickle
 from base64 import b64decode
 
 import requests
+from requests.auth import HTTPBasicAuth
 from requests.compat import urljoin
+from requests.exceptions import ConnectionError
 from virtualenvapi.manage import VirtualEnvironment
-
-# This will throw an exception if run not from virtualenv
-env = VirtualEnvironment()
 
 
 def get_function(task):
@@ -65,23 +64,36 @@ class TaskProcessor:
     send_result_endpoint = 'worker/submit_answer'
     get_task_endpoint = 'worker/request_task'
 
-    def __init__(self, server_addr):
+    def __init__(self, server_addr, login, password):
         self.server_addr = server_addr
+        self.login = login
+        self.password = password
+
         self.pool = multiprocessing.Pool()
 
-    def post(self, endpoint, **kwargs):
-        r = requests.post(urljoin(self.server_addr, endpoint), json=kwargs).json()
+    def request(self, method, endpoint, **kwargs):
+        response = requests.request(
+            method,
+            urljoin(self.server_addr, endpoint),
+            auth=HTTPBasicAuth(self.login, self.password),
+            **kwargs
+        )
+
+        if response.status_code == 401:
+            raise InvalidCredentialsException('Server did not accept the credentials you specified')
+
+        r = response.json()
+
         if r['sucsess']:
             return r
         else:
             raise RuntimeError('Server returned sucsess != True')
 
+    def post(self, endpoint, **kwargs):
+        return self.request('POST', json=kwargs)
+
     def get(self, endpoint):
-        r = requests.get(urljoin(self.server_addr, endpoint)).json()
-        if r['sucsess']:
-            return r
-        else:
-            raise RuntimeError('Server returned sucsess != True')
+        return self.request('GET', endpoint)
 
     def send_result(self, **kwargs):
         r = self.post(self.send_result_endpoint, **kwargs)
@@ -90,7 +102,7 @@ class TaskProcessor:
         while True:
             try:
                 r = self.get(self.get_task_endpoint)
-            except:
+            except ConnectionError:
                 time.sleep(check_interval)
                 continue
             
@@ -104,10 +116,20 @@ class TaskProcessor:
         for result in self.pool.imap_unordered(process_task, self.task_generator()):
             self.send_result(**result)
 
+
+class InvalidCredentialsException(Exception):
+    pass
+
+
 if __name__ == '__main__':
+    # This will throw an exception if run not from virtualenv
+    env = VirtualEnvironment()
+
     parser = argparse.ArgumentParser(description='A convenient-rpc node.')
     parser.add_argument('server_address')
+    parser.add_argument('login')
+    parser.add_argument('password')
     args = parser.parse_args()
 
-    processor = TaskProcessor(args.server_address)
+    processor = TaskProcessor(args.server_address, args.login, args.password)
     processor.mainloop()
