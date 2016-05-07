@@ -1,24 +1,28 @@
 import json
-import uuid
-from itertools import islice
-from functools import partial
-from threading import Thread
-from queue import Queue, Empty
 
 from flask import Flask, Response, jsonify, request
 
-from lib import *
-
+from lib.tasks import TaskManager, WrongIDException
+from lib.passwd import PasswordManager, UserPresentException
 
 app = Flask(__name__)
-manager = TaskManager()
-streams = {}
+pass_manager = PasswordManager()
+task_manager = TaskManager()
 
-def fill_queue(queue, iterable):
-    for item in iterable:
-        queue.put(item)
+@app.route("/user/register_user", methods=['POST'])
+@pass_manager.requires_auth
+def register_user():
+    r = request.get_json(force=True)
+
+    try:
+        pass_manager.register(r['username'], r['password'])
+    except UserPresentException:
+        return jsonify(sucsess=False, reason='User with this login is already present')
+
+    return jsonify(sucsess=True)
 
 @app.route("/user/submit_tasks", methods=['POST'])
+@pass_manager.requires_auth
 def submit_tasks():
     r = request.get_json(force=True)
 
@@ -30,11 +34,12 @@ def submit_tasks():
     for argskwargs in r.pop('argskwargslist'): # we're popping argskwargslist so we can use r as a template
         task = r.copy()
         task.update(argskwargs)
-        ids.append(manager.add_task(task))    
+        ids.append(task_manager.add_task(task))    
 
     return jsonify(sucsess=True, ids=ids)
 
 @app.route("/user/request_answers", methods=['POST'])
+@pass_manager.requires_auth
 def request_answers():
 
     r = request.get_json(force=True)
@@ -43,63 +48,37 @@ def request_answers():
     unordered = r.get('unordered', False)
     ids = r.get('ids', [])
 
-    answer_gen = manager.get_answers(ids, unordered=unordered)
-
     if start_stream:
-
-        stream_id = str(uuid.uuid4())
-        answer_queue = Queue()
-
-        streams[stream_id] = {
-            'generator': answer_gen,
-            'queue': answer_queue,
-            'worker': Thread(target=partial(fill_queue, answer_queue, answer_gen)),
-            'left': len(ids)
-        }
-        streams[stream_id]['worker'].start()
-
-        return jsonify(sucsess=True, stream_id=stream_id)
+        return jsonify(sucsess=True, stream_id=task_manager.start_stream(ids, unordered=unordered))
     else:
-        return jsonify(sucsess=True, answers=list(answer_gen))
+        return jsonify(sucsess=True, answers=list(task_manager.get_answers(ids, unordered=unordered)))
 
 @app.route("/user/request_from_stream", methods=['POST'])
+@pass_manager.requires_auth
 def request_from_stream():
     r = request.get_json(force=True)
 
     stream_id = r['stream_id']
 
-    if stream_id not in streams:
-        return jsonify(sucsess=False, reason='Stream with this id does not exist')
-
-    answers = []
-    while True:
-        try:
-            answers.append(streams[stream_id]['queue'].get_nowait())
-        except Empty:
-            break
-
-    streams[stream_id]['left'] -= len(answers)
-    last = streams[stream_id]['left'] == 0
-
-    if last:
-        streams.pop(stream_id)
-
-    return jsonify(sucsess=True, answers=answers, last=last)
+    try:
+        answers, last = task_manager.get_from_stream(stream_id)
+        return jsonify(sucsess=True, answers=answers, last=last)
+    except WrongIDException:
+        return jsonify(sucsess=False, reason='There is no stream with this ID')
 
 @app.route("/user/estimate_time_left", methods=['GET'])
+@pass_manager.requires_auth
 def estimate_time_left():
-    return jsonify(sucsess=True, time=manager.estimate_time_left())
-
-@app.route("/admin/show_tasks", methods=['GET'])
-def show_tasks():
-    return jsonify(manager.get_tasks())
+    return jsonify(sucsess=True, time=task_manager.estimate_time_left())
 
 @app.route("/worker/request_task", methods=['GET'])
+@pass_manager.requires_auth
 def request_task():
-    id_, task = manager.get_task()
+    id_, task = task_manager.get_task()
     return jsonify(sucsess=True, id=id_, task=task)
 
 @app.route("/worker/submit_answer", methods=['POST'])
+@pass_manager.requires_auth
 def submit_answer():
 
     r = request.get_json()
@@ -110,7 +89,7 @@ def submit_answer():
         time = r.get('time', None)
 
         try:
-            manager.add_answer(id_, answer, time)
+            task_manager.add_answer(id_, answer, time)
             return jsonify(sucsess=True)
         except WrongIDException:
             return jsonify(sucsess=False, reason='There was no task with this ID')
@@ -120,4 +99,9 @@ def submit_answer():
 
 
 if __name__ == "__main__":
+    try:
+        pass_manager.register('admin', 'admin')
+    except UserPresentException:
+        pass
+
     app.run(debug=True, threaded=True, host='0.0.0.0')

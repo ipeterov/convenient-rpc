@@ -39,6 +39,7 @@ class API:
         if r['sucsess']:
             return r
         else:
+            print(r)
             raise RuntimeError('Server returned sucsess != True')
 
     def get(self, endpoint):
@@ -46,6 +47,7 @@ class API:
         if r['sucsess']:
             return r
         else:
+            print(r)
             raise RuntimeError('Server returned sucsess != True')
 
     def send_tasks(self, tasks):

@@ -14,11 +14,11 @@ funcdesc = {'name': 'hash'}
 #     'name': 'shannon_entropy'
 # }
 
-items = ('qwe{}'.format(n) for n in range(10000))
-# items = ('spam', 'W2u)l1', '00000')
+# items = ('qwe{}'.format(n) for n in range(10000))
+items = ('spam', 'W2u)l1', '00000')
 
 def double(n):
-	return n*2
+    return n*2
 
 for result in api.map(double, items):
     # Do stuff with the structure our function returned

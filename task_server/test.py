@@ -1,6 +1,6 @@
 import unittest
 
-from lib import *
+from lib.tasks import *
 
 manager = TaskManager()
 

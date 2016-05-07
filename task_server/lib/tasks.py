@@ -1,6 +1,9 @@
 import uuid
 import time
+from functools import partial
 from collections import Counter
+from threading import Thread
+from queue import Queue, Empty
 
 class TaskManager:
 
@@ -15,11 +18,51 @@ class TaskManager:
         self.answers = {}
 
         self.unsent_tasks = []
+        self.streams = {}
 
         self.task_performance = {}
 
     def get_tasks(self):
         return self.tasks
+
+    def start_stream(self, ids, unordered=False):
+        def fill_queue(queue, iterable):
+            for item in iterable:
+                queue.put(item)
+
+        stream_id = str(uuid.uuid4())
+        answer_queue = Queue()
+        answer_gen = self.get_answers(ids, unordered=unordered)
+
+        self.streams[stream_id] = {
+            'generator': answer_gen,
+            'queue': answer_queue,
+            'worker': Thread(target=partial(fill_queue, answer_queue, answer_gen)),
+            'left': len(ids)
+        }
+        self.streams[stream_id]['worker'].start()
+
+        return stream_id
+
+    def get_from_stream(self, stream_id):
+
+        if stream_id not in self.streams:
+            raise WrongIDException()
+
+        answers = []
+        while True:
+            try:
+                answers.append(self.streams[stream_id]['queue'].get_nowait())
+            except Empty:
+                break
+
+        self.streams[stream_id]['left'] -= len(answers)
+        last = self.streams[stream_id]['left'] == 0
+
+        if last:
+            self.streams.pop(stream_id)
+
+        return answers, last
 
     def add_task(self, task):
         id_ = str(uuid.uuid4())
